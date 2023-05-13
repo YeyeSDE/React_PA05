@@ -1,0 +1,252 @@
+import React, { useState, useEffect } from "react";
+import Transaction from "./Transaction";
+
+const Transactions = () => {
+  const [transactions, setTransactions] = useState([]);
+  const [displayMode, setDisplayMode] = useState("show"); 
+  const [newTransaction, setNewTransaction] = useState({
+    id: "",
+    date: "",
+    category: "",
+    amount: 0,
+    description: "",
+  });
+
+  useEffect(() => {
+    const storedTransactions = localStorage.getItem("transactions");
+    if (storedTransactions) {
+      const parsedTransactions = JSON.parse(storedTransactions);
+      setTransactions(parsedTransactions);
+    }
+  }, []);
+  
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewTransaction({ ...newTransaction, [name]: value });
+  };
+
+  const addTransaction = () => {
+    if (
+      !newTransaction.date ||
+      !newTransaction.category ||
+      !newTransaction.amount ||
+      !newTransaction.description
+    ) {
+      alert("All fields are required!");
+      return;
+    }
+    setTransactions((prevTransactions) => {
+        const updatedTransactions = [
+          ...prevTransactions,
+          { ...newTransaction, id: Date.now(), description: newTransaction.description },
+        ];
+        localStorage.setItem("transactions", JSON.stringify(updatedTransactions));
+        return updatedTransactions;
+      });
+    setNewTransaction({ id: "", date: "", category: "", amount: 0, description: "" });
+  };
+
+  const deleteTransaction = (id) => {
+    const updatedTransactions = transactions.filter((t) => t.id !== id);
+    setTransactions(updatedTransactions);
+  };
+
+  const summarizeByDate = () => {
+    setDisplayMode("date");
+  };
+
+  const summarizeByMonth = () => {
+    setDisplayMode("month");
+  };
+
+  const summarizeByYear = () => {
+    setDisplayMode("year");
+  };
+
+  const summarizeByCategory = () => {
+    setDisplayMode("category");
+  };
+
+
+
+  const renderTransactionsByDate = () => {
+    const summary = transactions.reduce((acc, transaction) => {
+      const date = transaction.date;
+      if (!acc[date]) {
+        acc[date] = [transaction];
+      } else {
+        acc[date].push(transaction);
+      }
+      return acc;
+    }, {});
+  
+    return Object.entries(summary).map(([date, dateTransactions]) => (
+      <>
+          <h5 colSpan="5" style={{ fontWeight: "bold" }}>Date: {date}</h5>
+        {dateTransactions.map((transaction) => (
+          <Transaction
+            key={transaction.id}
+            transaction={transaction}
+            onDelete={deleteTransaction}
+          />
+        ))}
+      </>
+    ));
+  };
+
+  const renderTransactionsByMonth = () => {
+    const summary = transactions.reduce((acc, transaction) => {
+      const month = transaction.date.slice(0, 7); 
+      if (!acc[month]) {
+        acc[month] = [transaction];
+      } else {
+        acc[month].push(transaction);
+      }
+      return acc;
+    }, {});
+  
+    return Object.entries(summary).map(([month, monthTransactions]) => (
+      <>
+          <h5 colSpan="5" style={{ fontWeight: "bold" }}>Month: {month}</h5>
+        {monthTransactions.map((transaction) => (
+          <Transaction
+            key={transaction.id}
+            transaction={transaction}
+            onDelete={deleteTransaction}
+          />
+        ))}
+      </>
+    ));
+  };
+  
+  const renderTransactionsByYear = () => {
+    const summary = transactions.reduce((acc, transaction) => {
+      const year = transaction.date.slice(0, 4); 
+      if (!acc[year]) {
+        acc[year] = [transaction];
+      } else {
+        acc[year].push(transaction);
+      }
+      return acc;
+    }, {});
+  
+    return Object.entries(summary).map(([year, yearTransactions]) => (
+      <>
+          <h5 colSpan="5" style={{ fontWeight: "bold" }}>Year: {year}</h5>
+        {yearTransactions.map((transaction) => (
+          <Transaction
+            key={transaction.id}
+            transaction={transaction}
+            onDelete={deleteTransaction}
+          />
+        ))}
+      </>
+    ));
+  };
+  
+  const renderTransactionsByCategory = () => {
+    const summary = transactions.reduce((acc, transaction) => {
+      const category = transaction.category;
+      if (!acc[category]) {
+        acc[category] = [transaction];
+      } else {
+        acc[category].push(transaction);
+      }
+      return acc;
+    }, {});
+  
+    return Object.entries(summary).map(([category, categoryTransactions]) => (
+      <>
+        
+        <h5 colSpan="5" style={{ fontWeight: "bold" }}>Category: {category}</h5>
+        
+        {categoryTransactions.map((transaction) => (
+          <Transaction
+            key={transaction.id}
+            transaction={transaction}
+            onDelete={deleteTransaction}
+          />
+        ))}
+      </>
+    ));
+  };
+
+  const renderTransactions = () => {
+    switch (displayMode) {
+      case "date":
+        return renderTransactionsByDate();
+      case "month":
+        return renderTransactionsByMonth();
+      case "year":
+        return renderTransactionsByYear();
+      case "category":
+        return renderTransactionsByCategory();
+      default:
+        return transactions.map((transaction) => (
+          <Transaction
+            key={transaction.id}
+            transaction={transaction}
+            onDelete={deleteTransaction}
+          />
+        ));
+    }
+  };
+  return (
+    <div>
+      <h1>Transactions</h1>
+      <input
+        name="date"
+        type="date"
+        value={newTransaction.date}
+        onChange={handleInputChange}
+      />
+      <input
+        name="category"
+        type="text"
+        value={newTransaction.category}
+        onChange={handleInputChange}
+      />
+      <input
+        name="amount"
+        type="number"
+        value={newTransaction.amount}
+        onChange={handleInputChange}
+      />
+      <input
+        name="description"
+        type="text"
+        value={newTransaction.description}
+        onChange={handleInputChange}
+      />
+      <button class="button" onClick={addTransaction}>Add Transaction</button>
+      <br></br>
+      <div>
+        <br></br>
+        <button class="button" onClick={summarizeByDate}>Summary by date</button>
+        <button class="button" onClick={summarizeByMonth}>Summary by month</button>
+        <button class="button" onClick={summarizeByYear}>Summary by year</button>
+        <button class="button" onClick={summarizeByCategory}>Summary by category</button>
+        <br></br>
+        <br></br>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Amount</th>
+              <th>Description</th>
+              <th>Operation</th>
+            </tr>
+          </thead>
+          <tbody>
+          {renderTransactions()}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default Transactions;
